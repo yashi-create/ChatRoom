@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="message-box">
+    <h2>Chat Room: {{code}}</h2>
+    <div class="messages" id="messages"></div>                                         <!--This is for the incoming messages-->
+    <div class="inputs">
+        <input type="text" rows="3" placeholder="Message" name="message" id="message"/>                   <!--This is for the message we are going to send-->
+        <button type="button" name="send" id="send-btn" onclick="SendMessage()" class="send-btn">SEND</button>
+    </div>
+</div>
+<script type="text/javascript">               
+    var socketio = io();        //directly connects to the socket associated with our flask website. a connection event happens and in our chatroom.py we want to check the connection
+
+    const messages = document.getElementById("messages")
+
+    const createMessage = (name, msg) => {
+        const content = `
+            <div class="text">
+                <span>
+                    <strong>${name}</strong>: ${msg}
+                </span>
+                <span class="muted">
+                    ${new Date().toLocaleString()}
+                </span>
+            </div>
+        `;
+        messages.innerHTML += content;
+    };
+
+    //we are listening for a message event which will be initiated by our pyhton flask socket server
+    //this message will have data => name and message
+
+    socketio.on("message", (data) => {
+        createMessage(data.name, data.message);
+    });
+
+    //sending messages
+    const SendMessage = () => {
+        const message = document.getElementById("message")
+        if(message.value == "") return;
+        socketio.emit("message", {data: message.value})
+        message.value = "";
+    };
+</script>
+
+{% for msg in messages %}
+    <script type="text/javascript">
+        createMessage("{{msg.name}}", "{{msg.message}}");
+    </script>
+{% endfor %}
+
+{% endblock %}
